@@ -1,0 +1,21 @@
+{
+  "updated": "2026-10-24",
+  "projects": [
+    {
+      "name": "Todo List App",
+      "url": "todo-list.html",
+      "description": "輕量待辦事項清單：新增、刪除、標記完成，資料以 localStorage 保存，無後端、無建置。",
+      "stack": ["HTML", "CSS", "JavaScript"],
+      "category": "工具",
+      "status": "live"
+    },
+    {
+      "name": "銷售效能儀表板",
+      "url": "dashboard.html",
+      "description": "依年度、月份、產品與目的地區分析收入、數量與毛利趨勢；含互動圖表、篩選器、搜尋與可排序明細表。",
+      "stack": ["HTML", "CSS", "JavaScript", "SVG"],
+      "category": "儀表板",
+      "status": "live"
+    }
+  ]
+}

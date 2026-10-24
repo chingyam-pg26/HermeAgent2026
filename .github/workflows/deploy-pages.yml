@@ -24,8 +24,7 @@ jobs:
       - name: Build site
         run: |
           mkdir -p dist
-          cp index.html dist/
-          cp dashboard.html dist/
+          cp index.html projects.json dashboard.html todo-list.html dist/
           # Add any other static assets here as the site grows.
 
       - name: Upload artifact

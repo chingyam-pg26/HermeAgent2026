@@ -1,515 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Todos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<title>Navigator · Web 專案導覽</title>
 <style>
-  /* ---------- Tokens ---------- */
-  :root {
-    --bg: #fafaf9;
-    --surface: #ffffff;
-    --ink: #18181b;
-    --ink-secondary: #52525b;
-    --muted: #a1a1aa;
-    --border: #e4e4e7;
-    --border-strong: #d4d4d8;
-    --accent: #0d9488;          /* teal-600 */
-    --accent-contrast: #ffffff;
-    --accent-soft: #ccfbf1;    /* teal-100 */
-    --danger: #dc2626;
-    --shadow: 0 1px 2px rgba(24,24,27,.04), 0 4px 16px rgba(24,24,27,.06);
-    --radius: 12px;
-    --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-    --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  [data-theme="dark"] {
-    --bg: #09090b;
-    --surface: #18181b;
-    --ink: #fafafa;
-    --ink-secondary: #a1a1aa;
-    --muted: #71717a;
-    --border: #27272a;
-    --border-strong: #3f3f46;
-    --accent: #14b8a6;
-    --accent-contrast: #04211d;
-    --accent-soft: #134e4a;
-    --danger: #f87171;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
-  }
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#1a1d21; --ink-2:#4a5460; --muted:#6b7683;
+  --line:#dde3e8; --line-strong:#c3ccd4;
+  --accent:#0f766e; --accent-soft:#e6f4f2;
+  --live:#166534; --live-soft:#e8f3ec;
+  --dev:#b45309; --dev-soft:#fdf3e3;
+  --radius:12px; --shadow:0 1px 2px rgba(16,24,32,.06),0 4px 14px rgba(16,24,32,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.55;font-size:15px}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 48px}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ---------- header ---------- */
+.masthead{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:24px 26px;margin-bottom:18px}
+.masthead h1{font-size:clamp(20px,3vw,26px);letter-spacing:-.01em}
+.masthead .sub{color:var(--ink-2);font-size:14px;margin-top:4px;max-width:72ch}
+.masthead .meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:13px;color:var(--muted)}
+.masthead .meta strong{color:var(--ink-2)}
 
-  html { -webkit-text-size-adjust: 100%; }
+/* ---------- controls ---------- */
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.search{min-height:44px;padding:10px 14px;border:1px solid var(--line-strong);border-radius:10px;
+  background:var(--surface);color:var(--ink);font:inherit;font-size:15px;width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips .lbl{font-size:12px;font-weight:700;color:var(--muted);margin-right:2px}
+.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:99px;
+  padding:6px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chip.cat[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.result-note{font-size:13px;color:var(--muted)}
 
-  body {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100dvh;
-    display: flex;
-    justify-content: center;
-    padding: clamp(16px, 4vw, 48px) 16px 64px;
-    transition: background .25s ease, color .25s ease;
-  }
+/* ---------- cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:10px;
+  transition:transform .15s ease,box-shadow .15s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(16,24,32,.08),0 10px 24px rgba(16,24,32,.12)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card h2{font-size:17px;line-height:1.3}
+.badge{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.badge.live{background:var(--live-soft);color:var(--live)}
+.badge.dev{background:var(--dev-soft);color:var(--dev)}
+.card .desc{font-size:13px;color:var(--ink-2);flex:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags .tag{font-size:11px;font-weight:600;background:#eef1f4;border:1px solid var(--line);
+  color:var(--ink-2);border-radius:6px;padding:2px 8px}
+.tags .tag.cat{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.card .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border-top:1px solid var(--line);padding-top:10px}
+.open-btn{background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:700;
+  border-radius:8px;padding:8px 16px;display:inline-block}
+.open-btn:hover{filter:brightness(.94)}
+.open-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.card .where{font-size:11px;color:var(--muted)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);font-size:14px;
+  border:1px dashed var(--line-strong);border-radius:var(--radius);background:var(--surface)}
+.err{padding:20px;background:var(--dev-soft);border:1px solid #f0c79a;color:#7c3f06;
+  border-radius:var(--radius);font-size:14px}
+.err code{font-size:12px;background:#fff;border:1px solid #f0c79a;border-radius:4px;padding:1px 6px}
 
-  .app { width: 100%; max-width: 520px; }
+footer{margin-top:28px;font-size:12px;color:var(--muted);text-align:center}
+footer code{font-size:11px;background:#eef1f4;border-radius:4px;padding:1px 6px}
 
-  /* ---------- Header ---------- */
-  .header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .header h1 {
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-  .date {
-    margin-top: 4px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .theme-toggle {
-    flex: none;
-    width: 40px; height: 40px;
-    display: grid; place-items: center;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    border-radius: 10px;
-    color: var(--ink-secondary);
-    cursor: pointer;
-    transition: border-color .15s ease, background .15s ease;
-  }
-  .theme-toggle:hover { border-color: var(--border-strong); }
-  .theme-toggle:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  .theme-toggle svg { width: 18px; height: 18px; }
-  .theme-toggle .moon { display: none; }
-  [data-theme="dark"] .theme-toggle .sun { display: none; }
-  [data-theme="dark"] .theme-toggle .moon { display: block; }
-
-  /* ---------- Add bar ---------- */
-  .add-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-  .add-input {
-    flex: 1;
-    min-height: 48px;
-    padding: 12px 16px;
-    font: inherit;
-    font-size: 15px;
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    transition: border-color .15s ease;
-  }
-  .add-input::placeholder { color: var(--muted); }
-  .add-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent), var(--shadow);
-  }
-  .add-btn {
-    flex: none;
-    min-width: 48px;
-    min-height: 48px;
-    display: grid; place-items: center;
-    border: none;
-    border-radius: var(--radius);
-    background: var(--accent);
-    color: var(--accent-contrast);
-    cursor: pointer;
-    transition: filter .15s ease, transform .1s ease;
-  }
-  .add-btn:hover { filter: brightness(1.08); }
-  .add-btn:active { transform: scale(.96); }
-  .add-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .add-btn svg { width: 20px; height: 20px; }
-
-  /* ---------- Progress ---------- */
-  .progress {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    font-size: 13px;
-    color: var(--ink-secondary);
-  }
-  .progress-track {
-    flex: 1;
-    height: 4px;
-    border-radius: 99px;
-    background: var(--border);
-    overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 99px;
-    background: var(--accent);
-    transition: width .3s ease;
-  }
-  .progress-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-  /* ---------- Filters ---------- */
-  .filters {
-    display: inline-flex;
-    gap: 2px;
-    padding: 3px;
-    background: color-mix(in srgb, var(--ink) 5%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 16px;
-  }
-  .filter-btn {
-    border: none;
-    background: transparent;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--ink-secondary);
-    padding: 7px 14px;
-    min-height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background .15s ease, color .15s ease;
-  }
-  .filter-btn:hover { color: var(--ink); }
-  .filter-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .filter-btn[aria-pressed="true"] {
-    background: var(--surface);
-    color: var(--ink);
-    box-shadow: 0 1px 2px rgba(0,0,0,.08);
-  }
-
-  /* ---------- List ---------- */
-  .list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-
-  .item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 56px;
-    padding: 12px 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: border-color .15s ease;
-  }
-  .item:hover { border-color: var(--border-strong); }
-  .item.leaving {
-    opacity: 0;
-    transform: translateX(12px);
-    transition: opacity .18s ease, transform .18s ease;
-  }
-
-  .check {
-    flex: none;
-    width: 26px; height: 26px;
-    display: grid; place-items: center;
-    border: 2px solid var(--border-strong);
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-    transition: border-color .15s ease, background .15s ease;
-  }
-  .check:hover { border-color: var(--accent); }
-  .check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .check svg { width: 14px; height: 14px; stroke: var(--accent-contrast); stroke-width: 3; fill: none;
-    stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset .2s ease .05s; }
-  .item.done .check { background: var(--accent); border-color: var(--accent); }
-  .item.done .check svg { stroke-dashoffset: 0; }
-
-  .item-label {
-    flex: 1;
-    font-size: 15px;
-    line-height: 1.4;
-    word-break: break-word;
-    transition: color .2s ease;
-  }
-  .item.done .item-label {
-    color: var(--muted);
-    text-decoration: line-through;
-    text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent);
-  }
-
-  .del {
-    flex: none;
-    width: 34px; height: 34px;
-    display: grid; place-items: center;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity .15s ease, background .15s ease, color .15s ease;
-  }
-  .item:hover .del, .del:focus-visible { opacity: 1; }
-  .del:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
-  .del:focus-visible { outline: 2px solid var(--danger); outline-offset: 1px; }
-  .del svg { width: 16px; height: 16px; }
-  @media (hover: none) { .del { opacity: 1; } }
-
-  /* ---------- Empty state ---------- */
-  .empty {
-    text-align: center;
-    padding: 56px 16px;
-    border: 1px dashed var(--border-strong);
-    border-radius: var(--radius);
-    color: var(--muted);
-  }
-  .empty strong { display: block; color: var(--ink-secondary); font-size: 15px; margin-bottom: 4px; font-weight: 600; }
-  .empty span { font-size: 13px; }
-  .empty.hidden, .progress.hidden, .filters.hidden { display: none; }
-
-  .sr-only {
-    position: absolute; width: 1px; height: 1px;
-    padding: 0; margin: -1px; overflow: hidden;
-    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
-  }
+/* ---------- print ---------- */
+@media print{
+  body{background:#fff}
+  .wrap{max-width:none;padding:0}
+  .masthead,.card{box-shadow:none}
+  .controls .search,.chips{display:none!important}
+  .grid{grid-template-columns:1fr 1fr}
+  .card:hover{transform:none}
+  .open-btn{border:1px solid var(--line-strong);color:var(--ink);background:#fff}
+}
 </style>
 </head>
 <body>
-<main class="app">
-  <header class="header">
-    <div>
-      <h1>Todos</h1>
-      <p class="date" id="today"></p>
+<div class="wrap">
+  <header class="masthead">
+    <h1>Navigator · Web 專案導覽</h1>
+    <p class="sub">集中瀏覽所有上線與開發中的網頁專案。搜尋、分類與狀態篩選皆在前端完成；新增專案只需編輯倉庫內的 <code>projects.json</code> 並 push，即自動部署上線。</p>
+    <div class="meta">
+      <span>專案數：<strong id="totalNote">—</strong></span>
+      <span>最後更新：<strong id="updatedNote">—</strong></span>
     </div>
-    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">
-      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>
-      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-    </button>
   </header>
 
-  <form class="add-bar" id="addForm" autocomplete="off">
-    <label class="sr-only" for="newTask">Add a task</label>
-    <input class="add-input" id="newTask" type="text" maxlength="200" placeholder="Add a task…" required>
-    <button class="add-btn" type="submit" aria-label="Add task">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-  </form>
-
-  <div class="progress" id="progressRow">
-    <div class="progress-track" role="presentation"><div class="progress-fill" id="progressFill"></div></div>
-    <span class="progress-count" id="progressCount">0 of 0 done</span>
+  <div class="controls" aria-label="搜尋與篩選">
+    <input class="search" id="q" type="search" placeholder="搜尋專案名稱、簡介、技術或分類…" aria-label="搜尋專案">
+    <div class="chips" id="catChips" role="group" aria-label="分類篩選"><span class="lbl">分類</span></div>
+    <div class="chips" id="stChips" role="group" aria-label="狀態篩選"><span class="lbl">狀態</span></div>
+    <p class="result-note" id="resultNote" aria-live="polite"></p>
   </div>
 
-  <div class="filters" id="filterRow" role="group" aria-label="Filter tasks">
-    <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">All</button>
-    <button class="filter-btn" type="button" data-filter="active" aria-pressed="false">Active</button>
-    <button class="filter-btn" type="button" data-filter="done" aria-pressed="false">Done</button>
-  </div>
+  <main id="grid" class="grid" aria-label="專案卡片列表"></main>
+  <div class="empty" id="empty" hidden>沒有符合目前條件的專案。</div>
+  <div class="err" id="errBox" hidden></div>
 
-  <ul class="list" id="list"></ul>
-
-  <div class="empty" id="empty">
-    <strong id="emptyTitle">No tasks yet</strong>
-    <span id="emptyBody">Add your first task above.</span>
-  </div>
-
-  <p class="sr-only" role="status" aria-live="polite" id="live"></p>
-</main>
+  <footer>新增專案：在倉庫 <code>projects.json</code> 加入一筆（name / url / description / stack / category / status）後 push 到 main，GitHub Actions 會自動建置並部署。</footer>
+</div>
 
 <script>
-(function () {
-  "use strict";
+"use strict";
+const STATUS = {live:"已上線", dev:"開發中"};
+const state = {q:"", cat:"all", status:"all"};
+let PROJECTS = [], CATEGORIES = [];
 
-  var STORAGE_KEY = "todos.v1";
-  var THEME_KEY = "todos.theme";
-  var list = document.getElementById("list");
-  var form = document.getElementById("addForm");
-  var input = document.getElementById("newTask");
-  var empty = document.getElementById("empty");
-  var emptyTitle = document.getElementById("emptyTitle");
-  var emptyBody = document.getElementById("emptyBody");
-  var progressRow = document.getElementById("progressRow");
-  var progressFill = document.getElementById("progressFill");
-  var progressCount = document.getElementById("progressCount");
-  var filterRow = document.getElementById("filterRow");
-  var live = document.getElementById("live");
-  var filterBtns = Array.prototype.slice.call(document.querySelectorAll(".filter-btn"));
+const $ = id => document.getElementById(id);
 
-  var tasks = load();
-  var filter = "all";
+function esc(s){ const d=document.createElement("div"); d.textContent = String(s ?? ""); return d.innerHTML; }
 
-  document.getElementById("today").textContent =
-    new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-
-  /* ---------- Persistence ---------- */
-  function load() {
-    try {
-      var raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      return Array.isArray(raw) ? raw : [];
-    } catch (e) { return []; }
-  }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch (e) {}
-  }
-
-  /* ---------- Theme ---------- */
-  var root = document.documentElement;
-  var savedTheme = null;
-  try { savedTheme = localStorage.getItem(THEME_KEY); } catch (e) {}
-  root.setAttribute("data-theme",
-    savedTheme || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-
-  document.getElementById("themeToggle").addEventListener("click", function () {
-    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
-  });
-
-  /* ---------- Rendering ---------- */
-  function visible() {
-    if (filter === "active") return tasks.filter(function (t) { return !t.done; });
-    if (filter === "done") return tasks.filter(function (t) { return t.done; });
-    return tasks;
-  }
-
-  function render() {
-    list.innerHTML = "";
-    var shown = visible();
-
-    var doneCount = tasks.filter(function (t) { return t.done; }).length;
-    var total = tasks.length;
-    progressRow.classList.toggle("hidden", total === 0);
-    progressCount.textContent = doneCount + " of " + total + " done";
-    progressFill.style.width = total ? (doneCount / total * 100) + "%" : "0%";
-
-    filterRow.classList.toggle("hidden", total === 0);
-
-    if (total === 0) {
-      empty.classList.remove("hidden");
-      emptyTitle.textContent = "No tasks yet";
-      emptyBody.textContent = "Add your first task above.";
-      return;
-    }
-    empty.classList.add("hidden");
-
-    if (shown.length === 0) {
-      empty.classList.remove("hidden");
-      emptyTitle.textContent = filter === "done" ? "Nothing done yet" : "All caught up";
-      emptyBody.textContent = filter === "done" ? "Check something off to see it here." : "No active tasks — nice work.";
-      return;
-    }
-
-    shown.forEach(function (t) {
-      var li = document.createElement("li");
-      li.className = "item" + (t.done ? " done" : "");
-      li.dataset.id = t.id;
-
-      var check = document.createElement("button");
-      check.className = "check";
-      check.type = "button";
-      check.setAttribute("aria-label", (t.done ? "Mark not done: " : "Mark done: ") + t.text);
-      check.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      check.addEventListener("click", function () { toggle(t.id, li); });
-
-      var label = document.createElement("span");
-      label.className = "item-label";
-      label.textContent = t.text;
-
-      var del = document.createElement("button");
-      del.className = "del";
-      del.type = "button";
-      del.setAttribute("aria-label", "Delete: " + t.text);
-      del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg>';
-      del.addEventListener("click", function () { remove(t.id, li); });
-
-      li.appendChild(check);
-      li.appendChild(label);
-      li.appendChild(del);
-      list.appendChild(li);
+function renderChips(){
+  const cc=$("catChips"), sc=$("stChips");
+  cc.innerHTML='<span class="lbl">分類</span>';
+  sc.innerHTML='<span class="lbl">狀態</span>';
+  const mk=(wrap, val, label, cls) => {
+    const b=document.createElement("button");
+    b.type="button"; b.className="chip "+(cls||""); b.textContent=label;
+    b.dataset.val=val;
+    b.setAttribute("aria-pressed", val==="all" ? "true":"false");
+    b.addEventListener("click", ()=>{
+      if(wrap.id==="catChips") state.cat = (state.cat===val?"all":val);
+      else state.status = (state.status===val?"all":val);
+      syncChips(); renderCards();
     });
-  }
+    wrap.appendChild(b);
+    return b;
+  };
+  mk(cc,"all","全部","cat");
+  CATEGORIES.forEach(c=> mk(cc,c,c,"cat"));
+  mk(sc,"all","全部","st");
+  Object.keys(STATUS).forEach(s=> mk(sc,s,STATUS[s],"st"));
+}
+function syncChips(){
+  document.querySelectorAll("#catChips .chip").forEach(b=>
+    b.setAttribute("aria-pressed", String(state.cat===b.dataset.val)));
+  document.querySelectorAll("#stChips .chip").forEach(b=>
+    b.setAttribute("aria-pressed", String(state.status===b.dataset.val)));
+}
 
-  /* ---------- Actions ---------- */
-  function add(text) {
-    tasks.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: text, done: false });
-    save();
-    render();
-    live.textContent = "Task added: " + text;
-  }
-
-  function toggle(id, li) {
-    var t = tasks.find(function (x) { return x.id === id; });
-    if (!t) return;
-    t.done = !t.done;
-    save();
-    // animate in place if still visible, else re-render
-    if (filter === "all") {
-      li.classList.toggle("done", t.done);
-      var check = li.querySelector(".check");
-      check.setAttribute("aria-label", (t.done ? "Mark not done: " : "Mark done: ") + t.text);
-      updateProgress();
-      live.textContent = t.text + (t.done ? " marked done" : " marked active");
-    } else {
-      render();
-      live.textContent = t.text + (t.done ? " moved to done" : " moved to active");
-    }
-  }
-
-  function remove(id, li) {
-    li.classList.add("leaving");
-    setTimeout(function () {
-      tasks = tasks.filter(function (t) { return t.id !== id; });
-      save();
-      render();
-      live.textContent = "Task deleted";
-    }, 180);
-  }
-
-  function updateProgress() {
-    var doneCount = tasks.filter(function (t) { return t.done; }).length;
-    var total = tasks.length;
-    progressCount.textContent = doneCount + " of " + total + " done";
-    progressFill.style.width = total ? (doneCount / total * 100) + "%" : "0%";
-  }
-
-  /* ---------- Wiring ---------- */
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var text = input.value.trim();
-    if (!text) return;
-    add(text);
-    input.value = "";
-    input.focus();
+function visible(){
+  const q=state.q.trim().toLowerCase();
+  return PROJECTS.filter(p=>{
+    const hay=[p.name,p.description,(p.stack||[]).join(" "),p.category].join(" ").toLowerCase();
+    return (!q || hay.includes(q))
+      && (state.cat==="all" || p.category===state.cat)
+      && (state.status==="all" || p.status===state.status);
   });
+}
 
-  filterBtns.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      filter = btn.dataset.filter;
-      filterBtns.forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
-      render();
+function renderCards(){
+  const grid=$("grid"); grid.innerHTML="";
+  const rows=visible();
+  rows.forEach(p=>{
+    const st = STATUS[p.status] ? p.status : "";
+    const art=document.createElement("article");
+    art.className="card"; art.setAttribute("tabindex","0");
+    art.setAttribute("aria-label", p.name+"，"+(STATUS[st]||"狀態未定"));
+    art.innerHTML = `
+      <div class="top">
+        <h2>${esc(p.name)}</h2>
+        <span class="badge ${st||"dev"}">${esc(STATUS[st]||p.status||"開發中")}</span>
+      </div>
+      <p class="desc">${esc(p.description)}</p>
+      <div class="tags">
+        ${p.category?`<span class="tag cat">${esc(p.category)}</span>`:""}
+        ${(p.stack||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}
+      </div>
+      <div class="foot">
+        <a class="open-btn" href="${esc(p.url)}" target="_blank" rel="noopener">開啟專案 →</a>
+        <span class="where">${esc(p.url)}</span>
+      </div>`;
+    grid.appendChild(art);
+  });
+  $("empty").hidden = rows.length>0;
+  $("resultNote").textContent = rows.length===PROJECTS.length
+    ? `顯示全部 ${rows.length} 個專案`
+    : `顯示 ${rows.length}／${PROJECTS.length} 個專案`;
+}
+
+$("q").addEventListener("input", e=>{ state.q=e.target.value; renderCards(); });
+
+(function init(){
+  fetch("projects.json", {cache:"no-store"})
+    .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+    .then(j=>{
+      PROJECTS = j.projects || [];
+      CATEGORIES = [...new Set(PROJECTS.map(p=>p.category).filter(Boolean))];
+      $("totalNote").textContent = PROJECTS.length+" 個";
+      $("updatedNote").textContent = j.updated || "未標註";
+      renderChips(); syncChips(); renderCards();
+    })
+    .catch(e=>{
+      $("errBox").hidden=false;
+      $("errBox").innerHTML = `無法載入 <code>projects.json</code>（${esc(e.message)}）。請確認檔案與本頁同在站根目錄，並以 HTTPS 或 localhost 開啟。`;
+      $("totalNote").textContent="0 個";
     });
-  });
-
-  render();
 })();
 </script>
 </body>
