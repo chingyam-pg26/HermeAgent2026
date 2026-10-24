@@ -25,6 +25,8 @@ jobs:
         run: |
           mkdir -p dist
           cp index.html projects.json dashboard.html todo-list.html dist/
+          mkdir -p dist/johnny
+          cp johnny/index.html dist/johnny/
           # Add any other static assets here as the site grows.
 
       - name: Upload artifact

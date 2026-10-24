@@ -16,6 +16,14 @@
       "stack": ["HTML", "CSS", "JavaScript", "SVG"],
       "category": "儀表板",
       "status": "live"
+    },
+    {
+      "name": "Johnny Education Centre 官網",
+      "url": "johnny/",
+      "description": "教育中心主頁：公司簡介、教學理念、精選課程、師資團隊與聯絡方式；單一 HTML 檔案，圖片全數內嵌。",
+      "stack": ["HTML", "CSS"],
+      "category": "公司網站",
+      "status": "live"
     }
   ]
 }
