@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>銷售效能儀表板</title>
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#1a1d21; --ink-2:#4a5460; --muted:#6b7683;
+  --line:#dde3e8; --line-strong:#c3ccd4;
+  --accent:#0f766e; --accent-soft:#e6f4f2; --danger:#c2410c; --danger-soft:#fdeee4;
+  --c18:#0f766e; --c19:#2563eb; --c20:#d97706;
+  --ok:#166534; --warn:#b45309;
+  --radius:10px; --shadow:0 1px 2px rgba(16,24,32,.06),0 4px 14px rgba(16,24,32,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.55;font-size:15px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 56px}
+
+/* ---------- masthead ---------- */
+.masthead{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px 24px;margin-bottom:18px}
+.masthead h1{font-size:clamp(20px,3vw,26px);letter-spacing:-.01em}
+.masthead .purpose{color:var(--ink-2);font-size:14px;margin-top:4px;max-width:70ch}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:16px}
+.meta div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fafbfc}
+.meta dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.meta dd{font-size:14px;font-weight:600;margin-top:2px}
+
+/* ---------- section cards ---------- */
+section{margin-top:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 20px}
+.card h2{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h2 .tag{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);
+  border-radius:99px;padding:2px 9px}
+h2 .tag.warn{color:var(--warn);background:#fdf3e3}
+
+/* ---------- filters ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.fgroup{display:flex;flex-direction:column;gap:4px}
+.fgroup label{font-size:12px;color:var(--muted);font-weight:600}
+select,.search{min-height:40px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+select:focus,.search:focus,button:focus{outline:2px solid var(--accent);outline-offset:1px}
+.reset{min-height:40px;padding:8px 16px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--surface);font:inherit;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.reset:hover{border-color:var(--accent);color:var(--accent)}
+.filter-note{font-size:12px;color:var(--muted);margin-top:8px}
+.filter-note strong{color:var(--ink-2)}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px 16px}
+.kpi .label{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .value{font-size:clamp(20px,2.6vw,26px);font-weight:700;letter-spacing:-.01em;
+  margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.kpi .unit{font-size:11px;color:var(--muted);font-weight:400}
+
+/* ---------- summary ---------- */
+.summary p{margin-bottom:8px;color:var(--ink-2);max-width:95ch}
+.summary strong{color:var(--ink)}
+
+/* ---------- charts ---------- */
+.chart-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.ch{grid-column:span 6}
+.ch.w12{grid-column:span 12}
+.ch.w4{grid-column:span 4}
+@media(max-width:900px){.ch,.ch.w4{grid-column:span 12}}
+.chart-box{width:100%}
+.chart-box svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.axis-label{font-size:10px;fill:var(--muted)}
+.val-label{font-size:10px;fill:var(--ink-2)}
+
+/* tooltip */
+#tip{position:fixed;z-index:50;pointer-events:none;background:#1a1d21;color:#fff;font-size:12px;
+  padding:6px 10px;border-radius:6px;opacity:0;transform:translate(-50%,-130%);transition:opacity .12s;
+  white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+#tip.on{opacity:.96}
+
+/* ---------- insights ---------- */
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.ins{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fafbfc}
+.ins h3{font-size:14px;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.ins .badge{font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px}
+.ins .badge.risk{background:var(--danger-soft);color:var(--danger)}
+.ins .badge.watch{background:#fdf3e3;color:var(--warn)}
+.ins .badge.good{background:#e8f3ec;color:var(--ok)}
+.ins p{font-size:13px;color:var(--ink-2)}
+.ins ul{margin:6px 0 0 18px;font-size:13px;color:var(--ink-2)}
+.ins li{margin-bottom:4px}
+
+/* ---------- notes ---------- */
+.notes li{font-size:13px;color:var(--ink-2);margin:5px 0 5px 18px}
+
+/* ---------- table ---------- */
+.table-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.table-tools .search{flex:1;min-width:200px}
+.count-note{font-size:13px;color:var(--muted)}
+.tbl-wrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:820px;font-size:13px}
+thead th{position:sticky;top:0;background:#f8fafc;border-bottom:2px solid var(--line-strong);
+  padding:10px 12px;text-align:left;font-weight:700;white-space:nowrap;cursor:pointer;user-select:none}
+thead th.num{text-align:right}
+thead th .arr{color:var(--muted);font-size:10px;margin-left:4px}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#f4f8f7}
+tr.zero td{background:var(--danger-soft)}
+tr.zero:hover td{background:#fbe3d4}
+.zero-note{margin-top:8px;font-size:12px;color:var(--danger)}
+.empty-msg{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+a:focus,button:focus,select:focus,input:focus,th:focus{outline:2px solid var(--accent);outline-offset:1px}
+th:focus-visible{outline:2px solid var(--accent)}
+
+/* ---------- footer ---------- */
+footer{margin-top:26px;font-size:12px;color:var(--muted);text-align:center}
+
+/* ---------- print ---------- */
+@media print{
+  body{background:#fff;font-size:12px}
+  .wrap{max-width:none;padding:0}
+  .filters,.reset,.table-tools,#tip,.no-print{display:none!important}
+  .card,.kpi,.masthead{box-shadow:none;break-inside:avoid}
+  .chart-grid{grid-template-columns:1fr 1fr}
+  .ch,.ch.w4{grid-column:auto}
+  .ch.w12{grid-column:span 2}
+  .tbl-wrap{max-height:none;overflow:visible;border:none}
+  thead th{position:static}
+  section{margin-top:12px}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div id="tip" role="presentation"></div>
+<div class="wrap">
+
+  <header class="masthead">
+    <h1>銷售效能儀表板</h1>
+    <p class="purpose">本儀表板呈現來源檔案中的銷售訂單資料：依年度、月份、產品與目的地區（DEST）分析收入、數量與毛利趨勢，並提供篩選、搜尋與可排序明細表，供管理層檢視。所有數值皆來自來源檔案，未加入任何外部或推算性質之指標。</p>
+    <dl class="meta">
+      <div><dt>來源檔案</dt><dd>Dashboard_Data.xlsx（工作表：SalesData）</dd></div>
+      <div><dt>報告期</dt><dd id="periodMeta">—</dd></div>
+      <div><dt>紀錄數</dt><dd id="countMeta">—</dd></div>
+      <div><dt>金額單位</dt><dd>原始資料單位（來源未標明幣別）</dd></div>
+    </dl>
+  </header>
+
+  <!-- 篩選器 -->
+  <section class="card no-print" aria-label="篩選器">
+    <div class="filters">
+      <div class="fgroup"><label for="fYear">年份</label>
+        <select id="fYear"><option value="all">全部（2018–2020）</option></select></div>
+      <div class="fgroup"><label for="fProduct">產品</label>
+        <select id="fProduct"><option value="all">全部</option></select></div>
+      <div class="fgroup"><label for="fRegion">目的地區（DEST）</label>
+        <select id="fRegion"><option value="all">全部</option></select></div>
+      <button class="reset" id="fReset" type="button">重設篩選</button>
+    </div>
+    <p class="filter-note" id="filterNote"></p>
+  </section>
+
+  <!-- KPI -->
+  <section class="kpis" aria-label="主要 KPI">
+    <div class="kpi"><div class="label">總收入</div><div class="value" id="kRev">—</div>
+      <div class="sub">原始資料單位（幣別未標明）</div></div>
+    <div class="kpi"><div class="label">總銷售數量</div><div class="value" id="kQty">—</div><div class="sub">合計 Qty</div></div>
+    <div class="kpi"><div class="label">訂單筆數</div><div class="value" id="kOrders">—</div><div class="sub">資料筆數（INV #）</div></div>
+    <div class="kpi"><div class="label">平均毛利率</div><div class="value" id="kMargin">—</div>
+      <div class="sub">Σ(收入−成本) ÷ Σ收入</div></div>
+    <div class="kpi"><div class="label">佔比最高地區</div><div class="value" id="kTopRegion">—</div><div class="sub" id="kTopRegionSub"></div></div>
+    <div class="kpi"><div class="label">佔比最高產品</div><div class="value" id="kTopProduct">—</div><div class="sub" id="kTopProductSub"></div></div>
+  </section>
+
+  <!-- 管理層摘要 -->
+  <section class="card summary" aria-label="管理層摘要">
+    <h2>管理層摘要 <span class="tag">依來源資料撰寫</span></h2>
+    <p>報告期 <strong>2018-01-11 至 2020-12-27</strong> 共 <strong>99 筆訂單</strong>，總收入 <strong>9,890,000</strong>（原始資料單位，幣別未標明），總銷售數量 <strong>705</strong>，整體毛利率 <strong>32.79%</strong>。</p>
+    <p>年度收入呈下降趨勢：2018 年 4,010,000 → 2019 年 3,420,000（−14.7%）→ 2020 年 2,460,000（−28.1%），兩年累計減少 38.7%。</p>
+    <p>地區集中度高：<strong>AU（50.2%）</strong>與 <strong>US（29.7%）</strong>合計佔約 80%；其中 AU 於 2020 年由 23 筆降至 4 筆（收入 2,527,000 → 323,000，−87.2%）。</p>
+    <p>產品方面，<strong>PTS-14（28.8%）</strong>與 <strong>PTS-13（26.4%）</strong>合計佔 55.2% 收入；最大單筆訂單為 INV049（2018-11-09，PTS-14，AU，330,000）。</p>
+    <p>共有 <strong>9 筆訂單零毛利</strong>（UnitPrice＝UnitCost），明細表中已標註。</p>
+  </section>
+
+  <!-- 圖表 -->
+  <section class="chart-grid" aria-label="圖表">
+    <div class="card ch"><h2>年度收入比較 <span class="tag">條形圖</span></h2>
+      <div class="chart-box" id="chYear" role="img" aria-label="各年度收入條形圖"></div></div>
+    <div class="card ch w12"><h2>月度收入趨勢 <span class="tag">折線圖</span></h2>
+      <div class="chart-box" id="chMonth" role="img" aria-label="月度收入折線圖"></div></div>
+    <div class="card ch"><h2>各產品收入佔比 <span class="tag">環形圖</span></h2>
+      <div class="chart-box" id="chProduct" role="img" aria-label="各產品收入環形圖"></div>
+      <div class="legend" id="lgProduct"></div></div>
+    <div class="card ch"><h2>各目的地區收入 <span class="tag">條形圖</span></h2>
+      <div class="chart-box" id="chRegion" role="img" aria-label="各目的地區收入條形圖"></div></div>
+    <div class="card ch w12"><h2>地區 × 年度收入（交叉比較） <span class="tag">群組條形圖</span></h2>
+      <div class="chart-box" id="chCross" role="img" aria-label="地區與年度交叉收入群組條形圖"></div>
+      <div class="legend" id="lgCross"></div></div>
+  </section>
+
+  <!-- 風險與洞察 -->
+  <section class="card" aria-label="風險、異常與洞察">
+    <h2>風險、異常與洞察 <span class="tag warn">皆有來源資料支持</span></h2>
+    <div class="ins-grid">
+      <div class="ins"><h3><span class="badge risk">風險</span>連續兩年收入下滑</h3>
+        <p>年度收入 2018：4,010,000 → 2019：3,420,000 → 2020：2,460,000，連續負成長。2020 年訂單筆數僅 24 筆，為三年最低（2018 年 39 筆、2019 年 36 筆）。</p></div>
+      <div class="ins"><h3><span class="badge risk">異常</span>AU 地區 2020 年訂單急劇下降</h3>
+        <p>AU 為最大市場（2018–2019 各佔約 53% 收入），但 2020 年訂單由 23 筆降至 4 筆，收入 2,527,000 → 323,000（−87.2%），為資料中最大區域性變動。</p></div>
+      <div class="ins"><h3><span class="badge risk">風險</span>9 筆零毛利訂單</h3>
+        <p>UnitPrice＝UnitCost（毛利為 0）：INV013、INV037、INV042、INV046、INV048、INV052、INV056、INV059、INV089。涉及 PTS-11、PTS-12、PTS-13，跨 2018–2020 年。資料中無任何負毛利紀錄（UnitPrice＜UnitCost：0 筆）。</p></div>
+      <div class="ins"><h3><span class="badge watch">關注</span>產品與地區集中度</h3>
+        <p>前 2 大產品（PTS-14＋PTS-13）佔 55.2% 收入；前 2 大地區（AU＋US）佔 79.9%。收入來源集中，單一地區或產品波動對整體影響大（如 AU 2020 案例）。</p></div>
+      <div class="ins"><h3><span class="badge good">機會</span>小眾地區成長訊號</h3>
+        <p>HK 收入 2018：173,000 → 2020：385,000；JP 由 2019 年低點（114,000）回升至 2020 年 240,000；US 訂單數 2020 年（12 筆）高於 2019 年（7 筆）。上述為來源資料中可見的反向趨勢。</p></div>
+      <div class="ins"><h3><span class="badge good">建議行動</span>（依資料可得性）</h3>
+        <ul>
+          <li>查核 9 筆零毛利訂單之定價與成本紀錄（INV 編號見上）。</li>
+          <li>針對 AU 地區 2020 年訂單量急降，調閱該期間業務紀錄以確認原因。</li>
+          <li>評估 JP、HK 之成長訊號，決定是否擴大投入。</li>
+          <li>註：建議僅為依來源數據之提示；客戶、通路與財務細節未含於本檔案，無法延伸分析。</li>
+        </ul></div>
+    </div>
+  </section>
+
+  <!-- 資料限制說明 -->
+  <section class="card" aria-label="資料限制與處理說明">
+    <h2>資料限制與處理說明</h2>
+    <ul class="notes">
+      <li>來源未標明幣別，所有金額以「原始資料單位」呈現，不假設任何貨幣。</li>
+      <li>來源未提供產品分類（Category）對應；「PivotTable Answers」工作表提及之 Category 欄位與 SampleData／OrdersTable 工作表均不存在於本檔案，故未據以建立分類分析，僅依現有 PTS-10～15 產品編號分析。</li>
+      <li>「PivotTable Answers」工作表為練習答案說明（引用不存在之工作表），屬非報告必要資料，已排除。</li>
+      <li>客戶姓名（CUS 欄）屬個人資料，依規範排除；地區分析改以 DEST（目的地區代碼）呈現。地區代碼未於來源內提供全名對應，沿用原始代碼。</li>
+      <li>Date2、SA2 兩欄為重複查值公式（值等同 Date1 與 SA1），已移除；SA1（收入＝UnitPrice×Qty）與 SA2 之公式邏輯保留，收入欄以該計算值呈現。</li>
+      <li>報表日期（報告產生日期）未於來源檔案提供，故僅列「報告期＝資料日期範圍」，不另標註產生日期。</li>
+      <li>來源未提供比較基準（如年度目標、預算、前同期），故無「對標差異」分析；以上趨勢均為來源資料自比較。</li>
+    </ul>
+  </section>
+
+  <!-- 明細表 -->
+  <section class="card" aria-label="訂單明細表">
+    <h2>訂單明細表 <span class="tag">可搜尋／排序</span></h2>
+    <div class="table-tools no-print">
+      <input class="search" id="tblSearch" type="search" placeholder="搜尋發票編號、產品、地區或日期…" aria-label="搜尋訂單明細">
+      <button class="reset" id="tblClear" type="button">清除搜尋</button>
+      <span class="count-note" id="tblCount" aria-live="polite"></span>
+    </div>
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="訂單明細表格，可捲動">
+      <table id="tbl">
+        <thead><tr>
+          <th data-k="inv" aria-sort="ascending">發票編號<span class="arr">▲</span></th>
+          <th data-k="date" aria-sort="none">日期<span class="arr"></span></th>
+          <th data-k="p" aria-sort="none">產品<span class="arr"></span></th>
+          <th data-k="d" aria-sort="none">地區 (DEST)<span class="arr"></span></th>
+          <th data-k="up" aria-sort="none" class="num">單價 (UnitPrice)<span class="arr"></span></th>
+          <th data-k="uc" aria-sort="none" class="num">單位成本 (UnitCost)<span class="arr"></span></th>
+          <th data-k="q" aria-sort="none" class="num">數量 (Qty)<span class="arr"></span></th>
+          <th data-k="rev" aria-sort="none" class="num">收入（SA1＝單價×數量）<span class="arr"></span></th>
+          <th data-k="m" aria-sort="none" class="num">毛利（收入−成本）<span class="arr"></span></th>
+        </tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+      <p class="empty-msg" id="tblEmpty" hidden>無相符紀錄</p>
+    </div>
+    <p class="zero-note" id="zeroNote"></p>
+  </section>
+
+  <footer>儀表板內容僅取自來源檔案 Dashboard_Data.xlsx（SalesData，99 筆紀錄）。本頁為單一 HTML 檔案，未使用外部資源或後端。</footer>
+</div>
+
+<script>
+"use strict";
+/* ================= 內嵌資料（來源：Dashboard_Data.xlsx → SalesData） ================= */
+/* 欄位：inv=INV #, date=Date1, p=Product, d=DEST, up=UnitPrice, uc=UnitCost, q=Qty, rev=SA1(up×q), m=毛利((up−uc)×q)；CUS 客戶姓名依規範排除 */
+const DATA = [{"inv":"INV001","date":"2019-06-27","p":"PTS-11","d":"AU","up":17000,"uc":14000,"q":8,"rev":136000,"m":24000},{"inv":"INV002","date":"2018-06-25","p":"PTS-14","d":"US","up":28000,"uc":18000,"q":7,"rev":196000,"m":70000},{"inv":"INV003","date":"2020-07-28","p":"PTS-14","d":"UK","up":25000,"uc":18000,"q":12,"rev":300000,"m":84000},{"inv":"INV004","date":"2020-04-30","p":"PTS-14","d":"US","up":32000,"uc":18000,"q":9,"rev":288000,"m":126000},{"inv":"INV005","date":"2020-08-05","p":"PTS-15","d":"HK","up":9000,"uc":7000,"q":5,"rev":45000,"m":10000},{"inv":"INV006","date":"2018-09-16","p":"PTS-13","d":"AU","up":23000,"uc":13000,"q":6,"rev":138000,"m":60000},{"inv":"INV007","date":"2018-06-01","p":"PTS-14","d":"AU","up":20000,"uc":18000,"q":10,"rev":200000,"m":20000},{"inv":"INV008","date":"2020-11-25","p":"PTS-11","d":"HK","up":7000,"uc":4000,"q":8,"rev":56000,"m":24000},{"inv":"INV009","date":"2020-11-05","p":"PTS-10","d":"US","up":23000,"uc":14000,"q":7,"rev":161000,"m":63000},{"inv":"INV010","date":"2019-09-27","p":"PTS-13","d":"AU","up":22000,"uc":13000,"q":8,"rev":176000,"m":72000},{"inv":"INV011","date":"2020-02-04","p":"PTS-12","d":"AU","up":4000,"uc":3000,"q":8,"rev":32000,"m":8000},{"inv":"INV012","date":"2018-08-17","p":"PTS-14","d":"UK","up":22000,"uc":18000,"q":5,"rev":110000,"m":20000},{"inv":"INV013","date":"2019-01-27","p":"PTS-11","d":"US","up":4000,"uc":4000,"q":5,"rev":20000,"m":0},{"inv":"INV014","date":"2018-08-16","p":"PTS-12","d":"US","up":6000,"uc":3000,"q":5,"rev":30000,"m":15000},{"inv":"INV015","date":"2018-04-17","p":"PTS-12","d":"JP","up":5000,"uc":3000,"q":8,"rev":40000,"m":16000},{"inv":"INV016","date":"2020-09-03","p":"PTS-11","d":"US","up":7000,"uc":4000,"q":5,"rev":35000,"m":15000},{"inv":"INV017","date":"2019-05-10","p":"PTS-12","d":"UK","up":4000,"uc":3000,"q":7,"rev":28000,"m":7000},{"inv":"INV018","date":"2018-01-13","p":"PTS-10","d":"AU","up":18000,"uc":14000,"q":7,"rev":126000,"m":28000},{"inv":"INV019","date":"2019-10-24","p":"PTS-15","d":"AU","up":11000,"uc":7000,"q":9,"rev":99000,"m":36000},{"inv":"INV020","date":"2019-12-04","p":"PTS-13","d":"AU","up":23000,"uc":13000,"q":6,"rev":138000,"m":60000},{"inv":"INV021","date":"2018-05-10","p":"PTS-10","d":"US","up":22000,"uc":14000,"q":9,"rev":198000,"m":72000},{"inv":"INV022","date":"2020-06-03","p":"PTS-13","d":"JP","up":25000,"uc":13000,"q":6,"rev":150000,"m":72000},{"inv":"INV023","date":"2019-12-16","p":"PTS-13","d":"UK","up":21000,"uc":13000,"q":5,"rev":105000,"m":40000},{"inv":"INV024","date":"2020-07-16","p":"PTS-14","d":"US","up":19000,"uc":18000,"q":5,"rev":95000,"m":5000},{"inv":"INV025","date":"2019-06-25","p":"PTS-15","d":"US","up":11000,"uc":7000,"q":6,"rev":66000,"m":24000},{"inv":"INV026","date":"2018-01-27","p":"PTS-12","d":"UK","up":5000,"uc":3000,"q":6,"rev":30000,"m":12000},{"inv":"INV027","date":"2019-01-20","p":"PTS-12","d":"US","up":5000,"uc":3000,"q":5,"rev":25000,"m":10000},{"inv":"INV028","date":"2019-07-26","p":"PTS-12","d":"AU","up":5000,"uc":3000,"q":7,"rev":35000,"m":14000},{"inv":"INV029","date":"2019-08-16","p":"PTS-15","d":"JP","up":9000,"uc":7000,"q":6,"rev":54000,"m":12000},{"inv":"INV030","date":"2020-04-17","p":"PTS-12","d":"US","up":5000,"uc":3000,"q":7,"rev":35000,"m":14000},{"inv":"INV031","date":"2018-10-12","p":"PTS-15","d":"AU","up":9000,"uc":7000,"q":7,"rev":63000,"m":14000},{"inv":"INV032","date":"2020-10-17","p":"PTS-12","d":"AU","up":6000,"uc":3000,"q":8,"rev":48000,"m":24000},{"inv":"INV033","date":"2018-11-30","p":"PTS-13","d":"UK","up":16000,"uc":13000,"q":6,"rev":96000,"m":18000},{"inv":"INV034","date":"2019-06-26","p":"PTS-15","d":"AU","up":9000,"uc":7000,"q":10,"rev":90000,"m":20000},{"inv":"INV035","date":"2019-07-09","p":"PTS-10","d":"US","up":16000,"uc":14000,"q":5,"rev":80000,"m":10000},{"inv":"INV036","date":"2020-01-26","p":"PTS-13","d":"US","up":23000,"uc":13000,"q":10,"rev":230000,"m":100000},{"inv":"INV037","date":"2020-05-30","p":"PTS-12","d":"US","up":3000,"uc":3000,"q":7,"rev":21000,"m":0},{"inv":"INV038","date":"2019-10-27","p":"PTS-14","d":"AU","up":21000,"uc":18000,"q":7,"rev":147000,"m":21000},{"inv":"INV039","date":"2018-10-25","p":"PTS-10","d":"AU","up":21000,"uc":14000,"q":5,"rev":105000,"m":35000},{"inv":"INV040","date":"2019-10-17","p":"PTS-11","d":"US","up":8000,"uc":4000,"q":6,"rev":48000,"m":24000},{"inv":"INV041","date":"2018-10-28","p":"PTS-15","d":"HK","up":8000,"uc":7000,"q":6,"rev":48000,"m":6000},{"inv":"INV042","date":"2018-02-02","p":"PTS-11","d":"JP","up":4000,"uc":4000,"q":9,"rev":36000,"m":0},{"inv":"INV043","date":"2018-12-16","p":"PTS-11","d":"UK","up":5000,"uc":4000,"q":6,"rev":30000,"m":6000},{"inv":"INV044","date":"2018-07-30","p":"PTS-13","d":"AU","up":18000,"uc":13000,"q":6,"rev":108000,"m":30000},{"inv":"INV045","date":"2019-02-12","p":"PTS-15","d":"AU","up":11000,"uc":7000,"q":5,"rev":55000,"m":20000},{"inv":"INV046","date":"2019-06-23","p":"PTS-12","d":"UK","up":6000,"uc":6000,"q":6,"rev":36000,"m":0},{"inv":"INV047","date":"2019-07-05","p":"PTS-14","d":"AU","up":35000,"uc":18000,"q":5,"rev":175000,"m":85000},{"inv":"INV048","date":"2020-03-23","p":"PTS-13","d":"US","up":13000,"uc":13000,"q":9,"rev":117000,"m":0},{"inv":"INV049","date":"2018-11-09","p":"PTS-14","d":"AU","up":33000,"uc":18000,"q":10,"rev":330000,"m":150000},{"inv":"INV050","date":"2019-11-03","p":"PTS-11","d":"AU","up":8000,"uc":4000,"q":6,"rev":48000,"m":24000},{"inv":"INV051","date":"2018-05-21","p":"PTS-11","d":"HK","up":5000,"uc":4000,"q":10,"rev":50000,"m":10000},{"inv":"INV052","date":"2020-12-27","p":"PTS-11","d":"HK","up":4000,"uc":4000,"q":8,"rev":32000,"m":0},{"inv":"INV053","date":"2019-03-15","p":"PTS-15","d":"JP","up":10000,"uc":7000,"q":6,"rev":60000,"m":18000},{"inv":"INV054","date":"2019-12-17","p":"PTS-10","d":"AU","up":20000,"uc":14000,"q":5,"rev":100000,"m":30000},{"inv":"INV055","date":"2020-03-14","p":"PTS-11","d":"US","up":7000,"uc":4000,"q":10,"rev":70000,"m":30000},{"inv":"INV056","date":"2020-10-30","p":"PTS-12","d":"US","up":3000,"uc":3000,"q":5,"rev":15000,"m":0},{"inv":"INV057","date":"2020-08-24","p":"PTS-11","d":"US","up":5000,"uc":4000,"q":5,"rev":25000,"m":5000},{"inv":"INV058","date":"2018-06-03","p":"PTS-15","d":"AU","up":13000,"uc":7000,"q":9,"rev":117000,"m":54000},{"inv":"INV059","date":"2018-02-28","p":"PTS-12","d":"UK","up":3000,"uc":3000,"q":10,"rev":30000,"m":0},{"inv":"INV060","date":"2018-12-29","p":"PTS-15","d":"US","up":11000,"uc":7000,"q":7,"rev":77000,"m":28000},{"inv":"INV061","date":"2018-06-10","p":"PTS-11","d":"US","up":6000,"uc":4000,"q":8,"rev":48000,"m":16000},{"inv":"INV062","date":"2018-10-13","p":"PTS-11","d":"JP","up":6000,"uc":4000,"q":8,"rev":48000,"m":16000},{"inv":"INV063","date":"2018-03-03","p":"PTS-13","d":"AU","up":16000,"uc":13000,"q":6,"rev":96000,"m":18000},{"inv":"INV064","date":"2019-05-13","p":"PTS-10","d":"AU","up":20000,"uc":14000,"q":10,"rev":200000,"m":60000},{"inv":"INV065","date":"2018-04-12","p":"PTS-13","d":"US","up":25000,"uc":13000,"q":9,"rev":225000,"m":108000},{"inv":"INV066","date":"2019-01-21","p":"PTS-10","d":"AU","up":15000,"uc":14000,"q":5,"rev":75000,"m":5000},{"inv":"INV067","date":"2019-05-30","p":"PTS-15","d":"AU","up":8000,"uc":7000,"q":6,"rev":48000,"m":6000},{"inv":"INV068","date":"2018-11-26","p":"PTS-14","d":"AU","up":19000,"uc":18000,"q":6,"rev":114000,"m":6000},{"inv":"INV069","date":"2020-05-12","p":"PTS-13","d":"US","up":15000,"uc":13000,"q":8,"rev":120000,"m":16000},{"inv":"INV070","date":"2019-11-06","p":"PTS-10","d":"AU","up":23000,"uc":14000,"q":5,"rev":115000,"m":45000},{"inv":"INV071","date":"2020-11-25","p":"PTS-12","d":"AU","up":5000,"uc":3000,"q":9,"rev":45000,"m":18000},{"inv":"INV072","date":"2018-12-22","p":"PTS-11","d":"AU","up":6000,"uc":4000,"q":6,"rev":36000,"m":12000},{"inv":"INV073","date":"2019-09-28","p":"PTS-14","d":"US","up":22000,"uc":18000,"q":5,"rev":110000,"m":20000},{"inv":"INV074","date":"2019-03-25","p":"PTS-15","d":"AU","up":12000,"uc":7000,"q":9,"rev":108000,"m":45000},{"inv":"INV075","date":"2019-12-01","p":"PTS-14","d":"AU","up":36000,"uc":18000,"q":6,"rev":216000,"m":108000},{"inv":"INV076","date":"2018-01-18","p":"PTS-11","d":"AU","up":5000,"uc":4000,"q":7,"rev":35000,"m":7000},{"inv":"INV077","date":"2018-11-19","p":"PTS-11","d":"UK","up":6000,"uc":4000,"q":7,"rev":42000,"m":14000},{"inv":"INV078","date":"2018-06-14","p":"PTS-14","d":"US","up":19000,"uc":18000,"q":6,"rev":114000,"m":6000},{"inv":"INV079","date":"2018-05-06","p":"PTS-11","d":"US","up":7000,"uc":4000,"q":5,"rev":35000,"m":15000},{"inv":"INV080","date":"2019-09-14","p":"PTS-14","d":"AU","up":29000,"uc":18000,"q":7,"rev":203000,"m":77000},{"inv":"INV081","date":"2020-08-30","p":"PTS-13","d":"JP","up":18000,"uc":13000,"q":5,"rev":90000,"m":25000},{"inv":"INV082","date":"2018-09-02","p":"PTS-12","d":"AU","up":5000,"uc":3000,"q":9,"rev":45000,"m":18000},{"inv":"INV083","date":"2019-02-12","p":"PTS-11","d":"AU","up":5000,"uc":4000,"q":6,"rev":30000,"m":6000},{"inv":"INV084","date":"2020-06-22","p":"PTS-12","d":"HK","up":5000,"uc":3000,"q":9,"rev":45000,"m":18000},{"inv":"INV085","date":"2019-03-10","p":"PTS-12","d":"AU","up":6000,"uc":3000,"q":5,"rev":30000,"m":15000},{"inv":"INV086","date":"2018-08-31","p":"PTS-10","d":"AU","up":27000,"uc":14000,"q":10,"rev":270000,"m":130000},{"inv":"INV087","date":"2019-04-01","p":"PTS-14","d":"AU","up":28000,"uc":18000,"q":9,"rev":252000,"m":90000},{"inv":"INV088","date":"2019-03-17","p":"PTS-12","d":"AU","up":4000,"uc":3000,"q":9,"rev":36000,"m":9000},{"inv":"INV089","date":"2019-10-11","p":"PTS-12","d":"AU","up":3000,"uc":3000,"q":5,"rev":15000,"m":0},{"inv":"INV090","date":"2019-06-01","p":"PTS-12","d":"UK","up":5000,"uc":3000,"q":9,"rev":45000,"m":18000},{"inv":"INV091","date":"2018-01-11","p":"PTS-10","d":"HK","up":15000,"uc":14000,"q":5,"rev":75000,"m":5000},{"inv":"INV092","date":"2020-07-20","p":"PTS-13","d":"HK","up":23000,"uc":13000,"q":9,"rev":207000,"m":90000},{"inv":"INV093","date":"2018-09-19","p":"PTS-10","d":"AU","up":17000,"uc":14000,"q":8,"rev":136000,"m":24000},{"inv":"INV094","date":"2020-01-04","p":"PTS-13","d":"AU","up":22000,"uc":13000,"q":9,"rev":198000,"m":81000},{"inv":"INV095","date":"2018-06-19","p":"PTS-10","d":"US","up":23000,"uc":14000,"q":8,"rev":184000,"m":72000},{"inv":"INV096","date":"2018-10-22","p":"PTS-11","d":"US","up":7000,"uc":4000,"q":8,"rev":56000,"m":24000},{"inv":"INV097","date":"2019-11-18","p":"PTS-13","d":"US","up":24000,"uc":13000,"q":9,"rev":216000,"m":99000},{"inv":"INV098","date":"2018-05-05","p":"PTS-10","d":"JP","up":19000,"uc":14000,"q":5,"rev":95000,"m":25000},{"inv":"INV099","date":"2018-10-28","p":"PTS-13","d":"AU","up":22000,"uc":13000,"q":9,"rev":198000,"m":81000}];
+const YEARS = ["2018","2019","2020"];
+const YCOLOR = {"2018":"var(--c18)","2019":"var(--c20)","2020":"var(--c19)"};
+const YHEX = {"2018":"#0f766e","2019":"#d97706","2020":"#2563eb"};
+const PROD_COLORS = ["#0f766e","#2563eb","#d97706","#7c3aed","#0891b2","#64748b"];
+const fmt = n => n.toLocaleString("zh-HK");
+
+/* ---------- 狀態 ---------- */
+const state = {year:"all", product:"all", region:"all", q:"", sortK:"inv", sortDir:1};
+const $ = id => document.getElementById(id);
+const tip = $("tip");
+function showTip(html, x, y){ tip.innerHTML = html; tip.style.left = x+"px"; tip.style.top = y+"px"; tip.classList.add("on"); }
+function hideTip(){ tip.classList.remove("on"); }
+document.addEventListener("scroll", hideTip, {passive:true});
+
+function filtered(){
+  return DATA.filter(r =>
+    (state.year==="all"   || r.date.startsWith(state.year)) &&
+    (state.product==="all"|| r.p===state.product) &&
+    (state.region==="all" || r.d===state.region));
+}
+function agg(rows){
+  const sum = a => a.reduce((s,x)=>s+x,0);
+  const rev = sum(rows.map(r=>r.rev)), qty = sum(rows.map(r=>r.q));
+  const margin = sum(rows.map(r=>r.m));
+  return {rev, qty, n:rows.length, margin, mrate: rev? margin/rev*100 : null};
+}
+function byGroup(rows, key){
+  const m = {};
+  rows.forEach(r=>{ const k=r[key]; if(!m[k]) m[k]={rev:0,qty:0,n:0}; m[k].rev+=r.rev; m[k].qty+=r.q; m[k].n++; });
+  return m;
+}
+
+/* ---------- 填 select ---------- */
+(function initSelects(){
+  const fY=$("fYear"), fP=$("fProduct"), fR=$("fRegion");
+  YEARS.forEach(y=> fY.add(new Option(y+" 年", y)));
+  Object.keys(byGroup(DATA,"p")).sort().forEach(p=> fP.add(new Option(p, p)));
+  Object.keys(byGroup(DATA,"d")).sort().forEach(d=> fR.add(new Option(d, d)));
+})();
+$("fYear").addEventListener("change", e=>{ state.year=e.target.value; render(); });
+$("fProduct").addEventListener("change", e=>{ state.product=e.target.value; render(); });
+$("fRegion").addEventListener("change", e=>{ state.region=e.target.value; render(); });
+$("fReset").addEventListener("click", ()=>{ state.year="all";state.product="all";state.region="all";
+  $("fYear").value="all";$("fProduct").value="all";$("fRegion").value="all";
+  state.q="";$("tblSearch").value=""; render(); });
+
+/* ---------- 圖表工具 ---------- */
+function svgEl(tag, attrs){ const el=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(const k in attrs) el.setAttribute(k, attrs[k]); return el; }
+
+function barChart(el, labels, values, opts={}){
+  el.innerHTML="";
+  const W=520,H=280,pl=58,pr=14,pt=24,pb=34;
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":opts.aria||""});
+  const iw=W-pl-pr, ih=H-pt-pb;
+  const max=Math.max(...values,1);
+  const yTicks=[0, .25,.5,.75,1].map(t=>Math.round(max*t));
+  yTicks.forEach(t=>{
+    const y=pt+ih-(t/max)*ih;
+    svg.appendChild(svgEl("line",{x1:pl,y1:y,x2:pl+iw,y2:y,stroke:"var(--line)","stroke-dasharray": t===0?"none":"2 3"}));
+    const txt=svgEl("text",{x:pl-6,y:y+3,"text-anchor":"end",class:"axis-label"}); txt.textContent=fmt(t); svg.appendChild(txt);
+  });
+  const bw=iw/labels.length*.62, gap=iw/labels.length;
+  labels.forEach((lb,i)=>{
+    const v=values[i], x=pl+gap*i+(gap-bw)/2, h=(v/max)*ih, y=pt+ih-h;
+    const col= opts.colors ? opts.colors[i%opts.colors.length] : "var(--accent)";
+    const rect=svgEl("rect",{x,y,width:bw,height:Math.max(h,0),rx:3,fill:col});
+    rect.addEventListener("mousemove",e=>showTip(`<b>${lb}</b><br>${fmt(v)}（原始單位）`, e.clientX, e.clientY));
+    rect.addEventListener("mouseleave",hideTip);
+    svg.appendChild(rect);
+    const lb2=svgEl("text",{x:x+bw/2,y:H-pb+16,"text-anchor":"middle",class:"val-label"}); lb2.textContent=lb; svg.appendChild(lb2);
+    const vt=svgEl("text",{x:x+bw/2,y:y-6,"text-anchor":"middle",class:"val-label"}); vt.textContent=fmt(v); svg.appendChild(vt);
+  });
+  el.appendChild(svg);
+}
+
+function lineChart(el, labels, values, opts={}){
+  el.innerHTML="";
+  const W=960,H=300,pl=58,pr=14,pt=24,pb=40;
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":opts.aria||""});
+  const iw=W-pl-pr, ih=H-pt-pb;
+  const max=Math.max(...values,1);
+  [0,.25,.5,.75,1].forEach(t=>{
+    const y=pt+ih-(max*t/max)*ih;
+    svg.appendChild(svgEl("line",{x1:pl,y1:y,x2:pl+iw,y2:y,stroke:"var(--line)","stroke-dasharray": t===0?"none":"2 3"}));
+    const txt=svgEl("text",{x:pl-6,y:y+3,"text-anchor":"end",class:"axis-label"}); txt.textContent=fmt(Math.round(max*t)); svg.appendChild(txt);
+  });
+  const step=values.length>1? iw/(values.length-1):0;
+  const pts=values.map((v,i)=>[pl+step*i, pt+ih-(v/max)*ih]);
+  // area
+  const area=svgEl("path",{d:`M${pts[0][0]},${pt+ih} `+pts.map(p=>`L${p[0]},${p[1]}`).join(" ")+` L${pts[pts.length-1][0]},${pt+ih} Z`,fill:"var(--accent)","fill-opacity":".08",stroke:"none"});
+  svg.appendChild(area);
+  svg.appendChild(svgEl("path",{d:pts.map((p,i)=>(i?"L":"M")+p[0]+","+p[1]).join(" "),fill:"none",stroke:"var(--accent)","stroke-width":2}));
+  // sparse x labels (every 3rd month)
+  labels.forEach((lb,i)=>{ if(i%3===0){ const t=svgEl("text",{x:pl+step*i,y:H-pb+16,"text-anchor":"middle",class:"axis-label"}); t.textContent=lb; svg.appendChild(t);} });
+  // dots + tooltip
+  pts.forEach((p,i)=>{
+    const c=svgEl("circle",{cx:p[0],cy:p[1],r:3,fill:"var(--accent)"});
+    c.addEventListener("mousemove",e=>showTip(`<b>${labels[i]}</b><br>收入 ${fmt(values[i])}（原始單位）`, e.clientX, e.clientY));
+    c.addEventListener("mouseleave",hideTip);
+    svg.appendChild(c);
+  });
+  el.appendChild(svg);
+}
+
+function donut(el, legendEl, entries, opts={}){
+  el.innerHTML="";
+  const W=320,H=260,cx=W/2,cy=H/2,R=92,r=56;
+  const total=entries.reduce((s,e)=>s+e.value,0)||1;
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":opts.aria||""});
+  let a0=-Math.PI/2;
+  entries.forEach((e,i)=>{
+    const a1=a0+(e.value/total)*Math.PI*2, mid=(a0+a1)/2;
+    const large=(a1-a0)>Math.PI?1:0;
+    const x0=cx+R*Math.cos(a0),y0=cy+R*Math.sin(a0),x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+    const ix0=cx+r*Math.cos(a1),iy0=cy+r*Math.sin(a1),ix1=cx+r*Math.cos(a0),iy1=cy+r*Math.sin(a0);
+    const path=svgEl("path",{d:`M${x0},${y0} A${R},${R} 0 ${large} 1 ${x1},${y1} L${ix0},${iy0} A${r},${r} 0 ${large} 0 ${ix1},${iy1} Z`,
+      fill:opts.colors?opts.colors[i%opts.colors.length]:"var(--accent)",stroke:"var(--surface)","stroke-width":1.5});
+    path.addEventListener("mousemove",ev=>{ path.setAttribute("fill-opacity",".8");
+      showTip(`<b>${e.label}</b><br>${fmt(e.value)}（${(e.value/total*100).toFixed(1)}%）`, ev.clientX, ev.clientY);});
+    path.addEventListener("mouseleave",()=>{ path.removeAttribute("fill-opacity"); hideTip();});
+    svg.appendChild(path);
+    a0=a1;
+  });
+  const c1=svgEl("text",{x:cx,y:cy-4,"text-anchor":"middle",class:"val-label",style:"font-size:15px;font-weight:700"}); c1.textContent=fmt(total); svg.appendChild(c1);
+  const c2=svgEl("text",{x:cx,y:cy+14,"text-anchor":"middle",class:"axis-label"}); c2.textContent="總收入"; svg.appendChild(c2);
+  el.appendChild(svg);
+  legendEl.innerHTML="";
+  entries.forEach((e,i)=>{
+    const s=document.createElement("span");
+    s.innerHTML=`<span class="sw" style="background:${opts.colors?opts.colors[i%opts.colors.length]:"var(--accent)"}"></span>${e.label}（${(e.value/total*100).toFixed(1)}%）`;
+    legendEl.appendChild(s);
+  });
+}
+
+function groupedBar(el, legendEl, groupLabels, series /* [{name,values,color}] */){
+  el.innerHTML="";
+  const W=960,H=300,pl=58,pr=14,pt=26,pb=34;
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"地區與年度收入群組條形圖"});
+  const iw=W-pl-pr, ih=H-pt-pb;
+  const max=Math.max(...series.flatMap(s=>s.values),1);
+  [0,.25,.5,.75,1].forEach(t=>{
+    const y=pt+ih-(max*t/max)*ih;
+    svg.appendChild(svgEl("line",{x1:pl,y1:y,x2:pl+iw,y2:y,stroke:"var(--line)","stroke-dasharray": t===0?"none":"2 3"}));
+    const txt=svgEl("text",{x:pl-6,y:y+3,"text-anchor":"end",class:"axis-label"}); txt.textContent=fmt(Math.round(max*t)); svg.appendChild(txt);
+  });
+  const g=iw/groupLabels.length, bw=(g*.72)/series.length;
+  groupLabels.forEach((gl,gi)=>{
+    series.forEach((s,si)=>{
+      const v=s.values[gi], x=pl+g*gi+g*.14+bw*si, h=(v/max)*ih, y=pt+ih-h;
+      const rect=svgEl("rect",{x,y,width:bw-2,height:Math.max(h,0),rx:2,fill:s.color});
+      rect.addEventListener("mousemove",e=>showTip(`<b>${gl} · ${s.name}</b><br>${fmt(v)}（原始單位）`, e.clientX, e.clientY));
+      rect.addEventListener("mouseleave",hideTip);
+      svg.appendChild(rect);
+    });
+    const lb=svgEl("text",{x:pl+g*gi+g/2,y:H-pb+16,"text-anchor":"middle",class:"val-label"}); lb.textContent=gl; svg.appendChild(lb);
+  });
+  el.appendChild(svg);
+  legendEl.innerHTML="";
+  series.forEach(s=>{ const d=document.createElement("span");
+    d.innerHTML=`<span class="sw" style="background:${s.color}"></span>${s.name}`; legendEl.appendChild(d); });
+}
+
+/* ---------- 主渲染 ---------- */
+function render(){
+  const rows=filtered(), a=agg(rows);
+  /* KPI */
+  $("kRev").textContent=fmt(a.rev);
+  $("kQty").textContent=fmt(a.qty);
+  $("kOrders").textContent=a.n;
+  $("kMargin").textContent=a.mrate===null?"—":a.mrate.toFixed(2)+"%";
+  const topR=Object.entries(byGroup(rows,"d")).sort((x,y)=>y[1].rev-x[1].rev);
+  const topP=Object.entries(byGroup(rows,"p")).sort((x,y)=>y[1].rev-x[1].rev);
+  $("kTopRegion").textContent=topR.length?topR[0][0]:"—";
+  $("kTopRegionSub").textContent=topR.length?`佔比 ${((topR[0][1].rev/(a.rev||1))*100).toFixed(1)}%`:"";
+  $("kTopProduct").textContent=topP.length?topP[0][0]:"—";
+  $("kTopProductSub").textContent=topP.length?`佔比 ${((topP[0][1].rev/(a.rev||1))*100).toFixed(1)}%`:"";
+  const note=[];
+  if(state.year!=="all") note.push(`年份＝${state.year}`);
+  if(state.product!=="all") note.push(`產品＝${state.product}`);
+  if(state.region!=="all") note.push(`地區＝${state.region}`);
+  $("filterNote").innerHTML = note.length
+    ? `目前篩選：<strong>${note.join("、")}</strong>，顯示 ${a.n} 筆紀錄。`
+    : `目前未套用篩選，顯示全部 ${a.n} 筆紀錄。`;
+
+  /* charts */
+  const yrev={}; YEARS.forEach(y=>{ yrev[y]=rows.filter(r=>r.date.startsWith(y)).reduce((s,r)=>s+r.rev,0); });
+  barChart($("chYear"), ["2018","2019","2020"], [yrev["2018"],yrev["2019"],yrev["2020"]],
+    {aria:"各年度收入", colors:[YHEX["2018"],YHEX["2019"],YHEX["2020"]]});
+
+  // monthly: show months of filtered years
+  const monthKeys=[]; const months={};
+  const scopeY = state.year==="all"?YEARS:[state.year];
+  scopeY.forEach(y=>{ for(let m=1;m<=12;m++){ const k=y+"-"+String(m).padStart(2,"0");
+    const sub=rows.filter(r=>r.date.startsWith(k));
+    months[k]=sub.reduce((s,r)=>s+r.rev,0); monthKeys.push(k);} });
+  lineChart($("chMonth"), monthKeys, monthKeys.map(k=>months[k]), {aria:"月度收入趨勢"});
+
+  const pEntries=Object.entries(byGroup(rows,"p")).sort((x,y)=>y[1].rev-x[1].rev)
+    .map(([k,v],i)=>({label:k,value:v.rev}));
+  donut($("chProduct"), $("lgProduct"), pEntries, {aria:"各產品收入佔比", colors:PROD_COLORS});
+
+  const rEntries=Object.entries(byGroup(rows,"d")).sort((x,y)=>y[1].rev-x[1].rev).map(([k,v])=>v.rev);
+  barChart($("chRegion"), Object.entries(byGroup(rows,"d")).sort((x,y)=>y[1].rev-x[1].rev).map(e=>e[0]), rEntries,
+    {aria:"各目的地區收入"});
+
+  // cross: regions (all data) x years
+  const regionOrder=Object.keys(byGroup(DATA,"d")).sort();
+  groupedBar($("chCross"), $("lgCross"), regionOrder,
+    YEARS.map(y=>({name:y+" 年",color:YHEX[y],values:regionOrder.map(dg=>
+      DATA.filter(r=>r.d===dg&&r.date.startsWith(y)).reduce((s,r)=>s+r.rev,0))})));
+
+  renderTable(rows);
+}
+
+/* ---------- 明細表 ---------- */
+const sortState={k:"inv",dir:1};
+function renderTable(baseRows){
+  const q=state.q.trim().toLowerCase();
+  let rows=baseRows.filter(r=>!q || [r.inv,r.date,r.p,r.d].some(v=>String(v).toLowerCase().includes(q)));
+  rows.sort((a,b)=>{ const x=a[sortState.k],y=b[sortState.k];
+    return (x<y?-1:x>y?1:0)*sortState.dir; });
+  const tb=$("tblBody"); tb.innerHTML="";
+  rows.forEach(r=>{
+    const tr=document.createElement("tr");
+    if(r.up===r.uc) tr.className="zero";
+    tr.innerHTML=`<td>${r.inv}</td><td>${r.date}</td><td>${r.p}</td><td>${r.d}</td>
+      <td class="num">${fmt(r.up)}</td><td class="num">${fmt(r.uc)}</td><td class="num">${fmt(r.q)}</td>
+      <td class="num">${fmt(r.rev)}</td><td class="num">${fmt(r.m)}</td>`;
+    tb.appendChild(tr);
+  });
+  $("tblEmpty").hidden=rows.length>0;
+  $("tblCount").textContent=`共 ${filtered().length} 筆（來源 99 筆），目前顯示 ${rows.length} 筆`;
+  const zeros=rows.filter(r=>r.up===r.uc).length;
+  $("zeroNote").textContent=zeros?`紅色底紋＝零毛利訂單（UnitPrice＝UnitCost），目前顯示範圍內共 ${zeros} 筆。`:"";
+  document.querySelectorAll("#tbl thead th").forEach(th=>{
+    const k=th.dataset.k;
+    th.setAttribute("aria-sort", k===sortState.k ? (sortState.dir===1?"ascending":"descending") : "none");
+    th.querySelector(".arr").textContent = k===sortState.k ? (sortState.dir===1?"▲":"▼") : "";
+  });
+}
+document.querySelectorAll("#tbl thead th").forEach(th=>{
+  th.tabIndex=0;
+  const act=()=>{ const k=th.dataset.k;
+    if(sortState.k===k) sortState.dir*=-1; else {sortState.k=k; sortState.dir=(k==="inv"||k==="date"||k==="p"||k==="d")?1:-1;}
+    renderTable(filtered()); };
+  th.addEventListener("click",act);
+  th.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") {e.preventDefault();act();} });
+});
+$("tblSearch").addEventListener("input",e=>{ state.q=e.target.value; renderTable(filtered()); });
+$("tblClear").addEventListener("click",()=>{ state.q=""; $("tblSearch").value=""; renderTable(filtered()); });
+
+/* ---------- 初始化 ---------- */
+(function init(){
+  const dmin=DATA.map(r=>r.date).sort()[0], dmax=DATA.map(r=>r.date).sort().reverse()[0];
+  $("periodMeta").textContent=dmin+" 至 "+dmax;
+  $("countMeta").textContent=DATA.length+" 筆訂單";
+  render();
+})();
+</script>
+</body>
+</html>

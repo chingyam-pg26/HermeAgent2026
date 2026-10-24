@@ -25,6 +25,7 @@ jobs:
         run: |
           mkdir -p dist
           cp index.html dist/
+          cp dashboard.html dist/
           # Add any other static assets here as the site grows.
 
       - name: Upload artifact
